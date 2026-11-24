@@ -1,0 +1,12 @@
+{
+  "name": "CareerPath iOS 40M",
+  "short_name": "CareerPath",
+  "description": "Lộ trình Senior iOS 125 ngày, 2 giờ mỗi ngày, chuyển việc sau Tết 2027",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#090d17",
+  "theme_color": "#090d17",
+  "lang": "vi",
+  "icons": [{"src":"./favicon.svg","sizes":"any","type":"image/svg+xml","purpose":"any"}]
+}
