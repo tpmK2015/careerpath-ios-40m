@@ -1,6 +1,6 @@
 /* Optional offline cache when hosted over HTTPS or localhost; no remote tracking. */
-const CACHE = 'careerpath-ios40m-v1';
-const ASSETS = ['./','./index.html','./styles.css','./data.js','./app.js','./favicon.svg','./manifest.webmanifest'];
+const CACHE = 'careerpath-ios40m-v2';
+const ASSETS = ['./','./index.html','./styles.css','./data.js','./tech-lead.js','./app.js','./favicon.svg','./manifest.webmanifest'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS)).then(() => self.skipWaiting()));
 });

@@ -7,6 +7,7 @@
   const PAGES = [
     {id:'today', name:'Hôm nay',icon:'◫'},
     {id:'roadmap', name:'Lộ trình 125 ngày',icon:'▦'},
+    {id:'lead', name:'Tech Lead & Claude',icon:'↑'},
     {id:'skills', name:'Bản đồ kỹ năng',icon:'◈'},
     {id:'project', name:'Portfolio',icon:'⌘'},
     {id:'interview', name:'Phỏng vấn',icon:'✳'},
@@ -171,8 +172,56 @@
     <div class="card"><h3 class="card-title">Thiết lập mặc định</h3><div class="bar-pair"><span class="bar-text">Hiện tại</span><div class="bar-track"><span style="width:62.5%"></span></div><strong>25M</strong></div><div class="bar-pair"><span class="bar-text">Mục tiêu</span><div class="bar-track"><span style="width:100%;background:var(--lime)"></span></div><strong>40M</strong></div><div class="divider"></div><div class="legend"><div class="legend-row"><span class="legend-dot"></span><div><strong>Ngày bắt đầu</strong><small>10/11/2026</small></div></div><div class="legend-row"><span class="legend-dot"></span><div><strong>Ngày kết thúc</strong><small>14/03/2027</small></div></div><div class="legend-row"><span class="legend-dot"></span><div><strong>Mỗi ngày</strong><small>30 phút lý thuyết · 70 phút code · 20 phút recall</small></div></div></div><div class="divider"></div><button class="btn danger" data-action="reset-all">Xóa toàn bộ tiến độ</button><p class="fineprint">Chỉ xóa dữ liệu đã lưu trên trình duyệt này. Hãy xuất backup trước nếu cần.</p></div></div>
     <h2 class="section-heading">Chính sách dữ liệu</h2><div class="callout"><b>Privacy by default:</b> Website thuần HTML/CSS/JS, không tài khoản, không database, không analytics. Dữ liệu lưu trên thiết bị đang dùng. Nếu xóa dữ liệu trình duyệt hoặc mở ở thiết bị khác, tiến độ sẽ không tự đồng bộ. Link tài liệu ngoài chỉ mở khi bạn nhấn.</div>`;
   }
+  function renderLead(){
+    const study = window.TechLeadStudy;
+    const link = (label, url) => `<a href="${safeLink(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(label)} ↗</a>`;
+    if (!study) return header('Tech Lead & Claude', 'Hãy tải lại trang để mở nội dung.');
+    return header('Tech Lead & Claude', 'Dùng kinh nghiệm iOS làm nền để chịu trách nhiệm từ thiết kế đến vận hành.')+
+      `<section class="card study-section"><h2>Tín hiệu tuyển dụng tại Việt Nam</h2>
+      <p class="muted">Mẫu tin tuyển dụng rà soát 24/11/2026. Mục tiêu cá nhân 40 triệu gross/tháng cần đối chiếu theo từng JD và offer.</p>
+      <ul>${study.jobs.map(([name, note, url])=>`<li>${escapeHtml(note)} ${link(name,url)}</li>`).join('')}</ul>
+      </section><section class="card study-section"><h2>Lộ trình thực hành 6 tuần</h2>
+      <p class="muted">Dùng một dự án xuyên suốt. Dành 2 buổi mỗi tuần cho phần mở rộng nếu đang theo lịch iOS 125 ngày.</p>
+      <ol>${study.weeks.map(([name, task, proof])=>`<li><strong>${escapeHtml(name)}</strong><p>${escapeHtml(task)}</p><p class="muted">Đầu ra · ${escapeHtml(proof)}</p></li>`).join('')}</ol>
+      </section><section class="card study-section"><h2>Ôn Claude Certified Developer – Foundations</h2>
+      <p>CCDV-F dành cho developer tích hợp Claude vào ứng dụng. Partner Academy niêm yết lệ phí thi 125 USD trước ưu đãi. Kiểm tra quyền đăng ký và bản exam guide áp dụng đúng ngày thi.</p>
+      <p>Ưu tiên API và tích hợp, model và tối ưu, agents, prompt/context, tools/MCP, bảo mật, Claude Code và kiểm thử. Đọc guide trước, làm lab tuần 5–6 rồi sửa các nhóm câu sai trong mock.</p>
+      <ul>${study.study.map(([name, url])=>`<li>${link(name,url)}</li>`).join('')}</ul>
+      </section><section class="card study-section"><h2>Mock CCDV-F · ${study.mock.length} câu</h2>
+      <p class="muted">Câu hỏi tiếng Anh tự biên soạn, bám nhóm kỹ năng công khai. Mỗi câu nhiều đáp án chỉ tính đúng khi chọn đủ. Gợi ý tự bấm giờ 25 phút.</p>
+      <form id="leadQuiz">
+      ${study.mock.map(([domain, question, options, answers], index)=>`<fieldset><legend>${index+1}. ${escapeHtml(question)}</legend><p class="muted">${escapeHtml(domain)}</p>${options.map((option, choice)=>`<label><input type="${answers.length>1?'checkbox':'radio'}" name="q${index}" value="${choice}"> ${escapeHtml(option)}</label>`).join('')}<p id="leadAnswer${index}" class="study-answer" hidden></p></fieldset>`).join('')}
+      <button type="submit" class="btn primary">Chấm bài</button>
+      <button type="reset" class="btn" id="leadReset">Làm lại</button>
+      <p id="leadScore" role="status" tabindex="-1"></p>
+      </form></section>`;
+  }
+
+  $app.addEventListener('submit', event=>{
+    if (event.target.id!=='leadQuiz') return;
+    event.preventDefault();
+    const data = new FormData(event.target);
+    let score = 0;
+    window.TechLeadStudy.mock.forEach(([, , options, answers, explanation], index)=>{
+      const selected = data.getAll(`q${index}`).map(Number);
+      const correct = answers.length===selected.length && answers.every(choice=>selected.includes(choice));
+      if (correct) score++;
+      const result = document.getElementById(`leadAnswer${index}`);
+      result.textContent = `${correct?'Đúng':'Cần ôn lại'} · ${answers.map(choice=>options[choice]).join(' / ')}. ${explanation}`;
+      result.hidden = false;
+    });
+    const output = document.getElementById('leadScore');
+    output.textContent = `${score}/${window.TechLeadStudy.mock.length} câu đúng`;
+    output.focus();
+  });
+  $app.addEventListener('reset', event=>{
+    if (event.target.id!=='leadQuiz') return;
+    event.target.querySelectorAll('.study-answer').forEach(item=>item.hidden=true);
+    document.getElementById('leadScore').textContent='';
+  });
+
   function render(){
-    const views={today:renderToday,roadmap:renderRoadmap,skills:renderSkills,project:renderProject,interview:renderInterview,apply:renderApply,resources:renderResources,settings:renderSettings};
+    const views={today:renderToday,roadmap:renderRoadmap,skills:renderSkills,lead:renderLead,project:renderProject,interview:renderInterview,apply:renderApply,resources:renderResources,settings:renderSettings};
     shell((views[s.page]||renderToday)());
   }
   // Timer can survive a refresh; only committed seconds are counted as study time.
