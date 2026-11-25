@@ -83,6 +83,39 @@
       <div class="card stat"><span class="stat-spark">↗</span><div class="stat-label">Thu nhập mục tiêu</div><div class="stat-number accent-yellow">40<span class="unit"> triệu / tháng</span></div><div class="stat-note">Từ 25 triệu → mục tiêu tăng 60%</div></div>
     </div>`;
   }
+  function renderLesson(lesson, track, index, open=false){
+    if (!lesson) return '';
+    const {theory, exercise, solution, question, choices, code, source} = lesson;
+    return `<details class="lesson-panel" ${open?'open':''}>
+      <summary>Bài giảng, thực hành và tự kiểm tra</summary>
+      <h3>Hiểu bài</h3><p>${escapeHtml(theory)}</p>
+      <h3>Thử làm</h3><p>${escapeHtml(exercise)}</p>
+      <details class="lesson-solution"><summary>Xem lời giải mẫu</summary><p>${escapeHtml(solution)}</p>
+        ${code?`<pre><code>${escapeHtml(code)}</code></pre>`:''}
+      </details>
+      <form data-lesson-quiz data-track="${track}" data-index="${index}">
+        <fieldset><legend>${escapeHtml(question)}</legend>
+          ${choices.map((choice, option)=>`<label><input type="radio" name="answer" value="${option}" required> <span>${escapeHtml(choice)}</span></label>`).join('')}
+        </fieldset>
+        <button type="submit" class="btn primary">Kiểm tra đáp án</button>
+        <p class="lesson-result" role="status"></p>
+      </form>
+      <a href="${safeLink(source[1])}" target="_blank" rel="noopener noreferrer">${escapeHtml(source[0])} ↗</a>
+    </details>`;
+  }
+
+  $app.addEventListener('submit', event=>{
+    const form = event.target;
+    if (!form.matches('[data-lesson-quiz]')) return;
+    event.preventDefault();
+    const lesson = window.CareerPathLessons?.[form.dataset.track]?.[Number(form.dataset.index)];
+    const chosen = new FormData(form).get('answer');
+    if (!lesson || chosen === null) return;
+    const correct = Number(chosen) === lesson.answer;
+    const result = form.querySelector('.lesson-result');
+    result.textContent = `${correct?'Đúng.':'Chưa đúng.'} Đáp án: ${lesson.choices[lesson.answer]}. ${lesson.theory}`;
+  });
+
   function renderToday(){
     const d=selected(),wc=weekPercent(d.week),res=D.RESOURCES[d.resource],count=doneCount(d.date),week=D.WEEKS[d.week-1];
     const startDay=Math.max(0,Math.min(D.days.length-7,d.id-3));
@@ -90,6 +123,7 @@
     return header('Học đúng việc. Tiến từng ngày.','125 buổi học × 120 phút · Swift → Portfolio → Phỏng vấn → Offer',`<button class="btn" data-action="jump-today">↺ Về hôm nay</button><button class="btn primary" data-page="roadmap">Xem lộ trình ↗</button>`)+stats()+
     `<div class="dashboard-columns"><section class="column-stack"><div class="card learning-hero"><div class="hero-row"><div class="tag-list"><span class="badge lime">TUẦN ${d.week} / ${D.WEEKS.length}</span><span class="badge lav">${escapeHtml(d.phase)}</span><span class="badge">${d.date===today()?'HÔM NAY':dateFormat(d.date,{day:'2-digit',month:'2-digit'})}</span></div><span class="hero-date">Ngày ${d.id+1}/${D.days.length}</span></div>
       <h2 class="hero-title">${escapeHtml(d.title)}</h2><p class="hero-description">${escapeHtml(d.weekTitle)} · 2 giờ tập trung vào kỹ năng tuyển dụng thực tế.</p>
+      ${renderLesson(window.CareerPathLessons?.daily[d.id], 'daily', d.id, true)}
       <div class="tasks">${d.tasks.map(t=>`<label class="task ${isTaskDone(d.date,t.id)?'done':''}"><input type="checkbox" data-date="${d.date}" data-task="${t.id}" ${isTaskDone(d.date,t.id)?'checked':''}/><div><div class="task-label">${escapeHtml(t.label)}</div><div class="task-detail">${escapeHtml(t.detail)}</div></div><span class="task-time">${t.minutes} PHÚT</span></label>`).join('')}</div>
       <div class="question-block"><span class="section-eyebrow" style="color:var(--lav)">SENIOR INTERVIEW QUESTION</span><div style="margin-top:6px">“${escapeHtml(d.question)}”</div></div>
       <div class="reference-list"><span class="small-label">Tài liệu:</span><a href="${safeLink(res.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(res.name)} ↗</a></div>
@@ -182,7 +216,7 @@
       <ul>${study.jobs.map(([name, note, url])=>`<li>${escapeHtml(note)} ${link(name,url)}</li>`).join('')}</ul>
       </section><section class="card study-section"><h2>Lộ trình thực hành 6 tuần</h2>
       <p class="muted">Dùng một dự án xuyên suốt. Dành 2 buổi mỗi tuần cho phần mở rộng nếu đang theo lịch iOS 125 ngày.</p>
-      <ol>${study.weeks.map(([name, task, proof])=>`<li><strong>${escapeHtml(name)}</strong><p>${escapeHtml(task)}</p><p class="muted">Đầu ra · ${escapeHtml(proof)}</p></li>`).join('')}</ol>
+      <ol>${study.weeks.map(([name, task, proof], index)=>`<li><strong>${escapeHtml(name)}</strong><p>${escapeHtml(task)}</p><p class="muted">Đầu ra · ${escapeHtml(proof)}</p>${renderLesson(window.CareerPathLessons?.lead[index], 'lead', index)}</li>`).join('')}</ol>
       </section><section class="card study-section"><h2>Ôn Claude Certified Developer – Foundations</h2>
       <p>CCDV-F dành cho developer tích hợp Claude vào ứng dụng. Partner Academy niêm yết lệ phí thi 125 USD trước ưu đãi. Kiểm tra quyền đăng ký và bản exam guide áp dụng đúng ngày thi.</p>
       <p>Ưu tiên API và tích hợp, model và tối ưu, agents, prompt/context, tools/MCP, bảo mật, Claude Code và kiểm thử. Đọc guide trước, làm lab tuần 5–6 rồi sửa các nhóm câu sai trong mock.</p>
